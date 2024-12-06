@@ -2,7 +2,7 @@ from langchain_community.llms import Ollama
 import streamlit as st
 
 llm = Ollama(model= "llama3.1")
-st.title("Ashish's Log Analyzer")
+st.title("LogIQ")
 
 prompt = st.text_area("Enter your prompt here")
 
