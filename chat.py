@@ -46,6 +46,8 @@ st.subheader("Upload your log files and get insights!")
 with st.sidebar:
     st.info("🔍 **How it works:**\n1. Upload your log file.\n2. Let the bot analyze.\n3. Chat for detailed insights.", icon="ℹ️")
     st.markdown("**Supported Formats:** `.txt`, `.log`, `.csv`")
+    st.markdown("---")
+    st.text("🚀 Project by Ameen & Ashish.")
 
 # Initialize session state for chat history
 if "chat_history" not in st.session_state:
@@ -104,4 +106,3 @@ if st.session_state["content"]:
 
 # Footer
 st.markdown("---")
-st.text("🚀 Project by Ameen & Ashish.")
