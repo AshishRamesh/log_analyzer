@@ -47,8 +47,11 @@ with st.sidebar:
     st.info("🔍 **How it works:**\n1. Upload your log file.\n2. Let the bot analyze.\n3. Chat for detailed insights.", icon="ℹ️")
     st.markdown("**Supported Formats:** `.txt`, `.log`, `.csv`")
 
-# Initialize content as None
-content = None
+# Initialize session state for chat history
+if "chat_history" not in st.session_state:
+    st.session_state["chat_history"] = []
+if "content" not in st.session_state:
+    st.session_state["content"] = None
 
 # File Upload Section
 uploaded_file = st.file_uploader("Upload your log file", type=["txt", "log", "csv"])
@@ -62,37 +65,42 @@ if uploaded_file:
     with st.expander("File Preview", expanded=True):
         # Read and Display File Content
         if file_extension in ["txt", "log"]:
-            content = uploaded_file.read().decode("utf-8")
-            st.text_area("File Preview", content[:500], height=200)
+            st.session_state["content"] = uploaded_file.read().decode("utf-8")
+            st.text_area("File Preview", st.session_state["content"][:500], height=200)
         elif file_extension == "csv":
             data = pd.read_csv(uploaded_file)
             st.write("File Preview:")
             st.dataframe(data.head())
             # Convert CSV data to string format for LLM
-            content = data.to_string(index=False)
+            st.session_state["content"] = data.to_string(index=False)
     st.markdown("---")
-    # Chatbot Section
-    prompt = st.text_area("Enter your prompt here...", placeholder="e.g., What caused the spike in server errors?")
 
-    # Check if both content and prompt are valid
-    if st.button("Generate Response"):
-        if content and prompt:
-            with st.chat_message("user"):
-                    st.write(prompt)
-            with st.spinner("Generating response..."):
-                try:
-                    # Use the LLM to stream the response
-                    response = llm.stream(f"Analyze the following log data and answer the query: {prompt}\n\nLog Data:\n{content}")
-                    with st.chat_message("ai"):
-                        st.write(response)
-                    print(response)
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
-        else:
-            st.warning("Please upload a valid file and enter a query.")
-    else:
-        if not uploaded_file:
-            st.warning("Please upload a file to begin analysis!")
+# Chatbot Section
+if st.session_state["content"]:
+    # Display chat history
+    for chat in st.session_state["chat_history"]:
+        with st.chat_message(chat["role"]):
+            st.write(chat["message"])
+
+    # Input for the current user prompt
+    if prompt := st.chat_input("Enter your prompt..."):
+        # Append user message to chat history
+        st.session_state["chat_history"].append({"role": "user", "message": prompt})
+        with st.chat_message("user"):
+            st.write(prompt)
+
+        # Generate response
+        with st.spinner("Generating response..."):
+            try:
+                response = llm.stream(f"Analyze the following log data and answer the query: {prompt}\n\nLog Data:\n{st.session_state['content']}")
+                st.session_state["chat_history"].append({"role": "ai", "message": response})
+                with st.chat_message("ai"):
+                    st.write(response)
+            except Exception as e:
+                error_message = f"An error occurred: {e}"
+                st.session_state["chat_history"].append({"role": "ai", "message": error_message})
+                with st.chat_message("ai"):
+                    st.write(error_message)
 
 # Footer
 st.markdown("---")
