@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from langchain_community.llms import Ollama
+import benchmark as benchmark
 
 # Page Config
 st.set_page_config(
@@ -30,6 +31,11 @@ st.markdown(
     .stMarkdown, .stDataFrame {
         color: #39FF14;
     }
+    textarea:focus {
+        background-color: #1A1A1A;  /* Dark background */
+        color: #39FF14;  /* Neon green text */
+        border: none;  /* Remove border */
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -39,7 +45,7 @@ st.title("Chat with the LogIQ 🤖")
 st.markdown("---")
 
 # Initialize LLM
-llm = Ollama(model="llama3.1")
+llm = Ollama(model="mistral")
 st.subheader("Upload your log files and get insights!")
 
 # Sidebar for Info
@@ -90,6 +96,8 @@ if st.session_state["content"]:
         st.session_state["chat_history"].append({"role": "user", "message": prompt})
         with st.chat_message("user"):
             st.write(prompt)
+            benchmark.time_init()
+            benchmark.proc_util()
 
         # Generate response
         with st.spinner("Generating response..."):
@@ -98,6 +106,7 @@ if st.session_state["content"]:
                 st.session_state["chat_history"].append({"role": "ai", "message": response})
                 with st.chat_message("ai"):
                     st.write(response)
+                    benchmark.latency()
             except Exception as e:
                 error_message = f"An error occurred: {e}"
                 st.session_state["chat_history"].append({"role": "ai", "message": error_message})
